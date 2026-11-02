@@ -151,7 +151,7 @@ const totalOf = o => r2((Number(o.prix) || 0) + (Number(o.frais) || 0) - (Number
 const soldeOf = o => r2(totalOf(o) - (Number(o.paye) || 0));
 
 function loadJSON() {
-  fetch(JSON_URL)
+  fetch(JSON_URL, { cache: 'no-store' })
     .then(res => { if (!res.ok) throw new Error('Erreur HTTP'); return res.json(); })
     .then(d => {
       data = d;
