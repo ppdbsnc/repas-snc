@@ -2021,13 +2021,13 @@
       "payeManual": 9.02
     },
     {
-      "id": "mvz82vu8150ly",
+      "id": "mvz9rhh9sbm1f",
       "date": "2026-11-02",
-      "nom": "Haroune",
+      "nom": "Haroun",
       "resto": "Mc Do",
       "plat": "2 Big Mac",
-      "prix": 9.2,
-      "frais": 2.49,
+      "prix": 9,
+      "frais": 0,
       "reduc": 0,
       "paye": 0,
       "creditUtilise": 0,
@@ -2046,6 +2046,7 @@
     "Saquina",
     "Diana",
     "Mohammed",
-    "Angela"
+    "Angela",
+    "Haroun"
   ]
 }
