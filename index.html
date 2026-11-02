@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📋 Consultation Repas SNC</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{--bg:#f4f6fb;--card:#fff;--ink:#1f2430;--muted:#6b7280;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--line:#e5e7eb;--radius:14px;--shadow:0 6px 20px rgba(20,30,60,.08)}
   [data-theme=dark]{--bg:#0f1320;--card:#171c2e;--ink:#e8ecf6;--muted:#9aa3b8;--brand:#3b82f6;--line:#2a3149;--shadow:0 6px 20px rgba(0,0,0,.4)}
@@ -31,6 +32,7 @@
   .tabs{display:flex;gap:6px;flex-wrap:wrap}
   .tab{padding:7px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
   .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .chart-container{position:relative;height:300px}
   @media(max-width:640px){header h1{width:100%}}
 </style>
 </head>
@@ -43,6 +45,12 @@
 </header>
 
 <div class="wrap">
+
+  <!-- Alerte solde > 50 € -->
+  <div id="alerteSolde" style="display:none;background:rgba(220,38,38,.1);border:2px solid var(--bad);border-radius:var(--radius);padding:16px">
+    <h2 style="margin:0 0 10px;color:var(--bad)">⚠️ Alerte : Solde supérieur à 50 €</h2>
+    <div id="alerteListe"></div>
+  </div>
 
   <div class="card">
     <div class="flex-between" style="margin-bottom:14px">
@@ -89,7 +97,7 @@
       <select id="recapParticipant" style="max-width:180px" onchange="renderRecap()">
         <option value="">👤 Tous les participants</option>
       </select>
-      <select id="recapPériode" style="max-width:180px" onchange="renderRecap()">
+      <select id="recapPeriode" style="max-width:180px" onchange="renderRecap()">
         <option value="">📅 Toutes les dates</option>
       </select>
     </div>
@@ -111,6 +119,20 @@
     <p class="hint">Total sur les commandes filtrées ci-dessus. Trié par solde restant décroissant.</p>
   </div>
 
+  <div class="card" id="graphiquesCard" style="display:none">
+    <h2>📊 Répartition des dépenses</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <h3 style="font-size:.85rem;color:var(--muted)">Par participant</h3>
+        <div class="chart-container"><canvas id="chartParticipant"></canvas></div>
+      </div>
+      <div>
+        <h3 style="font-size:.85rem;color:var(--muted)">Par restaurant</h3>
+        <div class="chart-container"><canvas id="chartResto"></canvas></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -120,6 +142,7 @@ const JSON_URL = 'remboursement_repas_snc.json';
 let data = { orders: [], participants: [] };
 let currentTab = 'all';
 let currentCommande = '';
+let chartPart = null, chartResto = null;
 
 const r2 = n => Math.round(n * 100) / 100;
 const fmt = n => r2(n).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -132,7 +155,6 @@ function loadJSON() {
     .then(res => { if (!res.ok) throw new Error('Erreur HTTP'); return res.json(); })
     .then(d => {
       data = d;
-      // On remplit la liste des participants si elle n'est pas déjà dans le JSON
       if (!data.participants || data.participants.length === 0) {
         data.participants = [...new Set(data.orders.map(o => o.nom).filter(Boolean))].sort();
       }
@@ -182,7 +204,7 @@ function setTab(t) {
 
 function populateRecapFilters() {
   const selPart = document.getElementById('recapParticipant');
-  const selPeriode = document.getElementById('recapPériode');
+  const selPeriode = document.getElementById('recapPeriode');
 
   const noms = [...new Set(data.orders.map(o => o.nom).filter(Boolean))].sort();
   selPart.innerHTML = '<option value="">👤 Tous les participants</option>' +
@@ -236,11 +258,12 @@ function render() {
   }
 
   renderRecap();
+  renderGraphiques();
 }
 
 function renderRecap() {
   const fPart = document.getElementById('recapParticipant').value;
-  const fPeriode = document.getElementById('recapPériode').value;
+  const fPeriode = document.getElementById('recapPeriode').value;
 
   let filteredOrders = data.orders;
   if (fPart) filteredOrders = filteredOrders.filter(o => o.nom === fPart);
@@ -286,6 +309,72 @@ function renderRecap() {
   `;
 
   document.getElementById('recapCard').style.display = 'block';
+
+  /* Alerte solde > 50 € */
+  const seuil = 50;
+  const enRetard = entries.filter(e => e.solde > seuil);
+  const alerteDiv = document.getElementById('alerteSolde');
+  const alerteListe = document.getElementById('alerteListe');
+
+  if (enRetard.length > 0) {
+    alerteDiv.style.display = 'block';
+    alerteListe.innerHTML = enRetard
+      .sort((a, b) => b.solde - a.solde)
+      .map(e => `<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        <b>${e.nom}</b> — Solde restant : <span style="color:var(--bad);font-weight:700">${fmt(e.solde)}</span>
+        <span style="color:var(--muted);font-size:.8rem">(${e.count} repas)</span>
+      </div>`)
+      .join('');
+  } else {
+    alerteDiv.style.display = 'none';
+  }
+}
+
+function renderGraphiques() {
+  const parPart = {};
+  const parResto = {};
+
+  data.orders.forEach(o => {
+    const tot = totalOf(o);
+    parPart[o.nom] = r2((parPart[o.nom] || 0) + tot);
+    parResto[o.resto] = r2((parResto[o.resto] || 0) + tot);
+  });
+
+  const labelsPart = Object.keys(parPart).sort();
+  const dataPart = labelsPart.map(n => parPart[n]);
+  const labelsResto = Object.keys(parResto).sort((a, b) => parResto[b] - parResto[a]);
+  const dataResto = labelsResto.map(r => parResto[r]);
+
+  const palette = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5','#059669','#be123c'];
+
+  if (chartPart) chartPart.destroy();
+  if (chartResto) chartResto.destroy();
+
+  chartPart = new Chart(document.getElementById('chartParticipant'), {
+    type: 'bar',
+    data: {
+      labels: labelsPart,
+      datasets: [{ label: 'Total dépensé (€)', data: dataPart, backgroundColor: palette }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  chartResto = new Chart(document.getElementById('chartResto'), {
+    type: 'doughnut',
+    data: {
+      labels: labelsResto,
+      datasets: [{ data: dataResto, backgroundColor: palette }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } }
+    }
+  });
+
+  document.getElementById('graphiquesCard').style.display = 'block';
 }
 
 loadJSON();
