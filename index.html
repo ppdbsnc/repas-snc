@@ -33,17 +33,44 @@
   .tab{padding:7px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
   .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
   .chart-container{position:relative;height:300px}
-  /* ===== RESPONSIVE MOBILE ===== */
+  /* ===== MODE CARTES COMPLÈTES (mobile) ===== */
   @media(max-width:640px){
     header{padding:10px 12px}
     header h1{width:100%;font-size:1.05rem}
     .wrap{margin-top:14px;padding:0 10px;gap:14px}
     .card{padding:14px}
     .row{gap:8px}
-    table{font-size:.8rem}
-    th,td{padding:6px 7px;word-wrap:break-word}
-    .col-frais,.col-reduc,.col-paye{display:none}
     .charts-grid{grid-template-columns:1fr !important}
+    /* Transformation du tableau en cartes */
+    table{font-size:.82rem}
+    thead{display:none}
+    tr{
+      display:block;
+      border:1px solid var(--line);
+      border-radius:10px;
+      margin-bottom:12px;
+      padding:10px;
+      background:var(--bg);
+    }
+    td{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border:none;
+      padding:4px 6px;
+      text-align:right;
+    }
+    td::before{
+      content:attr(data-label);
+      font-weight:700;
+      color:var(--muted);
+      margin-right:8px;
+      text-align:left;
+      font-size:.74rem;
+      text-transform:uppercase;
+      letter-spacing:.3px;
+    }
+    td.num{text-align:right}
   }
 </style>
 </head>
@@ -83,8 +110,8 @@
     <table>
       <thead><tr>
         <th>📅 Date ↓</th><th>👤 Participant</th><th>🍽 Restaurant</th><th>Plat</th>
-        <th class="num">Prix</th><th class="num col-frais">Frais</th><th class="num col-reduc">Réduc</th>
-        <th class="num">Total</th><th class="num col-paye">Payé</th><th class="num">Solde</th>
+        <th class="num">Prix</th><th class="num">Frais</th><th class="num">Réduc</th>
+        <th class="num">Total</th><th class="num">Payé</th><th class="num">Solde</th>
         <th>Statut</th>
       </tr></thead>
       <tbody id="rows">
@@ -108,10 +135,10 @@
       <table>
         <thead><tr>
           <th>Participant</th>
-          <th class=num>Repas</th>
-          <th class=num>Total</th>
-          <th class=num>Payé</th>
-          <th class=num>Solde</th>
+          <th class="num">Repas</th>
+          <th class="num">Total</th>
+          <th class="num">Payé</th>
+          <th class="num">Solde</th>
         </tr></thead>
         <tbody id="recapRows"></tbody>
         <tfoot>
@@ -226,17 +253,17 @@ function render() {
         : tot <= 0.01 ? '<span class="pill" style="background:var(--line);color:var(--muted)">—</span>'
         : '<span class="pill ok">Payée</span>';
       return `<tr>
-        <td>${fmtDate(o.date)}</td>
-        <td><b>${o.nom || ''}</b></td>
-        <td>${o.resto || ''}</td>
-        <td>${o.plat || ''}</td>
-        <td class="num">${fmt(o.prix)}</td>
-        <td class="num col-frais">${fmt(o.frais)}</td>
-        <td class="num col-reduc">${fmt(o.reduc)}</td>
-        <td class="num"><b>${fmt(tot)}</b></td>
-        <td class="num col-paye">${fmt(o.paye)}</td>
-        <td class="num" style="color:${sol > 0.01 ? 'var(--bad)' : 'var(--ok)'}"><b>${fmt(sol)}</b></td>
-        <td>${status}</td>
+        <td data-label="Date">${fmtDate(o.date)}</td>
+        <td data-label="Participant"><b>${o.nom || ''}</b></td>
+        <td data-label="Restaurant">${o.resto || ''}</td>
+        <td data-label="Plat">${o.plat || ''}</td>
+        <td class="num" data-label="Prix">${fmt(o.prix)}</td>
+        <td class="num" data-label="Frais">${fmt(o.frais)}</td>
+        <td class="num" data-label="Réduc">${fmt(o.reduc)}</td>
+        <td class="num" data-label="Total"><b>${fmt(tot)}</b></td>
+        <td class="num" data-label="Payé">${fmt(o.paye)}</td>
+        <td class="num" data-label="Solde" style="color:${sol > 0.01 ? 'var(--bad)' : 'var(--ok)'}"><b>${fmt(sol)}</b></td>
+        <td data-label="Statut">${status}</td>
       </tr>`;
     }).join('');
   }
@@ -265,11 +292,11 @@ function renderRecap() {
   tbody.innerHTML = entries.map(e => {
     const color = e.solde > 0.01 ? 'var(--bad)' : (e.total > 0.01 ? 'var(--ok)' : 'var(--muted)');
     return `<tr>
-      <td><b>${e.nom}</b></td>
-      <td class=num>${e.count}</td>
-      <td class=num>${fmt(e.total)}</td>
-      <td class=num>${fmt(e.paye)}</td>
-      <td class=num style="color:${color}"><b>${fmt(e.solde)}</b></td>
+      <td data-label="Participant"><b>${e.nom}</b></td>
+      <td class="num" data-label="Repas">${e.count}</td>
+      <td class="num" data-label="Total">${fmt(e.total)}</td>
+      <td class="num" data-label="Payé">${fmt(e.paye)}</td>
+      <td class="num" data-label="Solde" style="color:${color}"><b>${fmt(e.solde)}</b></td>
     </tr>`;
   }).join('');
   const tCount = entries.reduce((s, e) => s + e.count, 0);
@@ -278,10 +305,10 @@ function renderRecap() {
   const tSolde = r2(tTotal - tPaye);
   document.getElementById('recapTotal').innerHTML = `
     <td>TOTAL (${tCount} repas)</td>
-    <td class=num>${tCount}</td>
-    <td class=num>${fmt(tTotal)}</td>
-    <td class=num>${fmt(tPaye)}</td>
-    <td class=num style="color:var(--bad)">${fmt(tSolde)}</td>
+    <td class="num">${tCount}</td>
+    <td class="num">${fmt(tTotal)}</td>
+    <td class="num">${fmt(tPaye)}</td>
+    <td class="num" style="color:var(--bad)">${fmt(tSolde)}</td>
   `;
   document.getElementById('recapCard').style.display = 'block';
   /* Alerte solde > 50 € */
