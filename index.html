@@ -20,6 +20,7 @@
   .btn{border:none;border-radius:9px;padding:9px 14px;font-size:.88rem;font-weight:600;cursor:pointer;background:var(--brand);color:#fff;transition:.15s}
   .btn:hover{filter:brightness(1.08)}
   .btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .btn.ok{background:var(--ok)}
   table{width:100%;border-collapse:collapse;font-size:.86rem}
   th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
   th{position:sticky;top:0;background:var(--card);font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
@@ -29,6 +30,9 @@
   .pill.bad{background:rgba(220,38,38,.15);color:var(--bad)}
   .hint{font-size:.76rem;color:var(--muted)}
   .flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{padding:7px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+  .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
   @media(max-width:640px){header h1{width:100%}}
 </style>
 </head>
@@ -43,27 +47,32 @@
 <div class="wrap">
 
   <div class="card">
-    <div class="flex-between">
-      <h2>🍽 Liste des commandes</h2>
+    <div class="flex-between" style="margin-bottom:14px">
+      <h2>🍽 Commandes</h2>
       <div class="row">
-        <select id="fParticipant" style="max-width:180px" onchange="render()">
-          <option value="">👤 Tous les participants</option>
+        <select id="fCommande" style="min-width:220px;max-width:320px" onchange="onCommandeChange()">
+          <option value="">— Sélectionner une commande —</option>
         </select>
-        <select id="fResto" style="max-width:180px" onchange="render()">
-          <option value="">🍽 Tous les restaurants</option>
-        </select>
-        <input type="date" id="fDate" onchange="render()" style="max-width:160px">
+        <button class="btn sec" onclick="resetCommande()">📋 Toutes</button>
       </div>
     </div>
 
-    <div style="margin:10px 0 14px">
-      <input id="fSearch" placeholder="🔍 Recherche (nom, plat, restaurant)" oninput="render()">
+    <div class="row" style="margin-bottom:10px">
+      <div style="flex:1;min-width:180px">
+        <input type="text" id="fSearch" placeholder="🔍 Recherche (nom, plat, restaurant)" oninput="render()">
+      </div>
+    </div>
+
+    <div class="tabs" style="margin-bottom:14px">
+      <div class="tab active" id="tab-all" onclick="setTab('all')">Toutes</div>
+      <div class="tab" id="tab-regs" onclick="setTab('regs')">À régulariser</div>
+      <div class="tab" id="tab-paid" onclick="setTab('paid')">Payées</div>
     </div>
 
     <div style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th>Date</th><th>Participant</th><th>Restaurant</th><th>Plat</th>
+        <th>📅 Date ↓</th><th>👤 Participant</th><th>🍽 Restaurant</th><th>Plat</th>
         <th class=num>Prix</th><th class=num>Frais</th><th class=num>Réduc</th>
         <th class=num>Total</th><th class=num>Payé</th><th class=num>Solde</th>
         <th>Statut</th>
@@ -73,7 +82,7 @@
       </tbody>
     </table>
     </div>
-    <p class="hint">💡 Cette page est en lecture seule. Les données sont mises à jour manuellement par l'administrateur.</p>
+    <p class="hint" style="margin-top:12px">💡 Cette page est en lecture seule. Les données sont mises à jour manuellement par l'administrateur. Dates en JJ-MM-AAAA.</p>
   </div>
 
 </div>
@@ -81,12 +90,13 @@
 <script>
 /* ═══════════════════════════════════════════════════════════
    CHANGER CETTE URL PAR CELLE DE VOTRE FICHIER JSON
-   HÉBERGÉ SUR GITHUB PAGES (ou Cloudflare Pages)
-   Exemple : https://votre-nom.github.io/depot/data.json
+   HÉBERGÉ SUR GITHUB PAGES
    ═══════════════════════════════════════════════════════════ */
-const JSON_URL = 'remboursement_repas_snc.json';
+const JSON_URL = 'data.json';
 
-let data = { orders: [], participants: [] };
+let data = { orders: [] };
+let currentTab = 'all';
+let currentCommande = '';
 
 const r2 = n => Math.round(n * 100) / 100;
 const fmt = n => r2(n).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -99,7 +109,7 @@ function loadJSON() {
     .then(res => { if (!res.ok) throw new Error('Erreur HTTP'); return res.json(); })
     .then(d => {
       data = d;
-      populateFilters();
+      buildCommandeList();
       render();
     })
     .catch(err => {
@@ -108,37 +118,60 @@ function loadJSON() {
     });
 }
 
-function populateFilters() {
-  const selPart = document.getElementById('fParticipant');
-  const selResto = document.getElementById('fResto');
-  const curPart = selPart.value, curResto = selResto.value;
+/* Construit la liste déroulante des commandes (date + restaurant) [3] */
+function buildCommandeList() {
+  const sel = document.getElementById('fCommande');
+  const cur = sel.value;
+  const combos = {};
+  data.orders.forEach(o => {
+    const key = `${o.date}__${o.resto}`;
+    if (!combos[key]) combos[key] = { date: o.date, resto: o.resto, count: 0 };
+    combos[key].count++;
+  });
+  const list = Object.values(combos).sort((a, b) => b.date.localeCompare(a.date) || a.resto.localeCompare(b.resto));
+  sel.innerHTML = '<option value="">— Sélectionner une commande —</option>' +
+    list.map(c => `<option value="${c.date}__${c.resto}">${fmtDate(c.date)} — ${c.resto} (${c.count} pers.)</option>`).join('');
+  if (cur) sel.value = cur;
+}
 
-  const noms = [...new Set(data.orders.map(o => o.nom).filter(Boolean))].sort();
-  selPart.innerHTML = '<option value="">👤 Tous les participants</option>' +
-    noms.map(n => `<option value="${n}">${n}</option>`).join('');
+function onCommandeChange() {
+  currentCommande = document.getElementById('fCommande').value;
+  render();
+}
 
-  const restos = [...new Set(data.orders.map(o => o.resto).filter(Boolean))].sort();
-  selResto.innerHTML = '<option value="">🍽 Tous les restaurants</option>' +
-    restos.map(r => `<option value="${r}">${r}</option>`).join('');
+function resetCommande() {
+  currentCommande = '';
+  document.getElementById('fCommande').value = '';
+  render();
+}
 
-  if (curPart) selPart.value = curPart;
-  if (curResto) selResto.value = curResto;
+function setTab(t) {
+  currentTab = t;
+  ['all','regs','paid'].forEach(x => {
+    document.getElementById('tab-'+x).classList.toggle('active', x === t);
+  });
+  render();
 }
 
 function render() {
-  const fPart = document.getElementById('fParticipant').value;
-  const fResto = document.getElementById('fResto').value;
-  const fDate = document.getElementById('fDate').value;
   const q = (document.getElementById('fSearch').value || '').toLowerCase();
-
   let rows = [...data.orders];
 
-  if (fPart) rows = rows.filter(o => o.nom === fPart);
-  if (fResto) rows = rows.filter(o => (o.resto || '') === fResto);
-  if (fDate) rows = rows.filter(o => o.date === fDate);
+  /* Filtre par commande (date + restaurant) */
+  if (currentCommande) {
+    const [date, resto] = currentCommande.split('__');
+    rows = rows.filter(o => o.date === date && o.resto === resto);
+  }
+
+  /* Filtre par statut (onglets) */
+  if (currentTab === 'regs') rows = rows.filter(o => soldeOf(o) > 0.01);
+  if (currentTab === 'paid') rows = rows.filter(o => totalOf(o) > 0.01 && soldeOf(o) <= 0.01);
+
+  /* Filtre par recherche */
   if (q) rows = rows.filter(o => [o.nom, o.plat, o.resto].join(' ').toLowerCase().includes(q));
 
-  rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  /* Tri : date décroissante, puis nom */
+  rows.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.nom || '').localeCompare(b.nom || ''));
 
   const tb = document.getElementById('rows');
   if (!rows.length) {
