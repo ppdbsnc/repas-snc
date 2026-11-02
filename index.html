@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 Consultation Repas SNC</title>
+<style>
+  :root{--bg:#f4f6fb;--card:#fff;--ink:#1f2430;--muted:#6b7280;--brand:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--line:#e5e7eb;--radius:14px;--shadow:0 6px 20px rgba(20,30,60,.08)}
+  [data-theme=dark]{--bg:#0f1320;--card:#171c2e;--ink:#e8ecf6;--muted:#9aa3b8;--brand:#3b82f6;--line:#2a3149;--shadow:0 6px 20px rgba(0,0,0,.4)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{position:sticky;top:0;z-index:10;background:var(--card);box-shadow:var(--shadow);padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  header h1{font-size:1.15rem;margin:0;margin-right:auto}
+  .wrap{max-width:1200px;margin:24px auto;padding:0 16px;display:grid;gap:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .card h2{margin:0 0 14px;font-size:1rem;color:var(--brand)}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+  label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px;font-weight:600}
+  input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font-size:.9rem}
+  .btn{border:none;border-radius:9px;padding:9px 14px;font-size:.88rem;font-weight:600;cursor:pointer;background:var(--brand);color:#fff;transition:.15s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{position:sticky;top:0;background:var(--card);font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700}
+  .pill.ok{background:rgba(22,163,74,.15);color:var(--ok)}
+  .pill.bad{background:rgba(220,38,38,.15);color:var(--bad)}
+  .hint{font-size:.76rem;color:var(--muted)}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+  @media(max-width:640px){header h1{width:100%}}
+</style>
+</head>
+<body data-theme="light">
+
+<header>
+  <h1>📋 Consultation Repas SNC</h1>
+  <button class="btn sec" onclick="document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'">🌓</button>
+  <button class="btn sec" onclick="location.reload()">🔄 Actualiser</button>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <div class="flex-between">
+      <h2>🍽 Liste des commandes</h2>
+      <div class="row">
+        <select id="fParticipant" style="max-width:180px" onchange="render()">
+          <option value="">👤 Tous les participants</option>
+        </select>
+        <select id="fResto" style="max-width:180px" onchange="render()">
+          <option value="">🍽 Tous les restaurants</option>
+        </select>
+        <input type="date" id="fDate" onchange="render()" style="max-width:160px">
+      </div>
+    </div>
+
+    <div style="margin:10px 0 14px">
+      <input id="fSearch" placeholder="🔍 Recherche (nom, plat, restaurant)" oninput="render()">
+    </div>
+
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Participant</th><th>Restaurant</th><th>Plat</th>
+        <th class=num>Prix</th><th class=num>Frais</th><th class=num>Réduc</th>
+        <th class=num>Total</th><th class=num>Payé</th><th class=num>Solde</th>
+        <th>Statut</th>
+      </tr></thead>
+      <tbody id="rows">
+        <tr><td colspan="11" style="text-align:center;color:var(--muted);padding:32px">⏳ Chargement des données…</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="hint">💡 Cette page est en lecture seule. Les données sont mises à jour manuellement par l'administrateur.</p>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CHANGER CETTE URL PAR CELLE DE VOTRE FICHIER JSON
+   HÉBERGÉ SUR GITHUB PAGES (ou Cloudflare Pages)
+   Exemple : https://votre-nom.github.io/depot/data.json
+   ═══════════════════════════════════════════════════════════ */
+const JSON_URL = 'data.json';
+
+let data = { orders: [], participants: [] };
+
+const r2 = n => Math.round(n * 100) / 100;
+const fmt = n => r2(n).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+const fmtDate = d => { if (!d) return ''; const p = d.split('-'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : d; };
+const totalOf = o => r2((Number(o.prix) || 0) + (Number(o.frais) || 0) - (Number(o.reduc) || 0));
+const soldeOf = o => r2(totalOf(o) - (Number(o.paye) || 0));
+
+function loadJSON() {
+  fetch(JSON_URL)
+    .then(res => { if (!res.ok) throw new Error('Erreur HTTP'); return res.json(); })
+    .then(d => {
+      data = d;
+      populateFilters();
+      render();
+    })
+    .catch(err => {
+      document.getElementById('rows').innerHTML =
+        `<tr><td colspan="11" style="text-align:center;color:var(--bad);padding:32px">❌ Impossible de charger les données. Vérifiez que le fichier JSON est bien accessible sur GitHub Pages. (${err.message})</td></tr>`;
+    });
+}
+
+function populateFilters() {
+  const selPart = document.getElementById('fParticipant');
+  const selResto = document.getElementById('fResto');
+  const curPart = selPart.value, curResto = selResto.value;
+
+  const noms = [...new Set(data.orders.map(o => o.nom).filter(Boolean))].sort();
+  selPart.innerHTML = '<option value="">👤 Tous les participants</option>' +
+    noms.map(n => `<option value="${n}">${n}</option>`).join('');
+
+  const restos = [...new Set(data.orders.map(o => o.resto).filter(Boolean))].sort();
+  selResto.innerHTML = '<option value="">🍽 Tous les restaurants</option>' +
+    restos.map(r => `<option value="${r}">${r}</option>`).join('');
+
+  if (curPart) selPart.value = curPart;
+  if (curResto) selResto.value = curResto;
+}
+
+function render() {
+  const fPart = document.getElementById('fParticipant').value;
+  const fResto = document.getElementById('fResto').value;
+  const fDate = document.getElementById('fDate').value;
+  const q = (document.getElementById('fSearch').value || '').toLowerCase();
+
+  let rows = [...data.orders];
+
+  if (fPart) rows = rows.filter(o => o.nom === fPart);
+  if (fResto) rows = rows.filter(o => (o.resto || '') === fResto);
+  if (fDate) rows = rows.filter(o => o.date === fDate);
+  if (q) rows = rows.filter(o => [o.nom, o.plat, o.resto].join(' ').toLowerCase().includes(q));
+
+  rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const tb = document.getElementById('rows');
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:32px">Aucune ligne ne correspond à ce filtre.</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = rows.map(o => {
+    const tot = totalOf(o), sol = soldeOf(o);
+    const status = sol > 0.01
+      ? '<span class="pill bad">À régulariser</span>'
+      : tot <= 0.01 ? '<span class="pill" style="background:var(--line);color:var(--muted)">—</span>'
+      : '<span class="pill ok">Payée</span>';
+    return `<tr>
+      <td>${fmtDate(o.date)}</td>
+      <td><b>${o.nom || ''}</b></td>
+      <td>${o.resto || ''}</td>
+      <td>${o.plat || ''}</td>
+      <td class="num">${fmt(o.prix)}</td>
+      <td class="num">${fmt(o.frais)}</td>
+      <td class="num">${fmt(o.reduc)}</td>
+      <td class="num"><b>${fmt(tot)}</b></td>
+      <td class="num">${fmt(o.paye)}</td>
+      <td class="num" style="color:${sol > 0.01 ? 'var(--bad)' : 'var(--ok)'}"><b>${fmt(sol)}</b></td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+loadJSON();
+</script>
+</body>
+</html>
