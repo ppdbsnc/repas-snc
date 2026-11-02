@@ -837,8 +837,9 @@
       "prix": 6.5,
       "frais": 0.62,
       "reduc": 0.48,
-      "paye": 6.640000000000001,
-      "payeur": ""
+      "paye": 6.64,
+      "payeur": "",
+      "payeManual": 6.64
     },
     {
       "id": "mvuxjlueho6ym",
@@ -909,8 +910,9 @@
       "prix": 7.5,
       "frais": 0.36,
       "reduc": 0.3,
-      "paye": 7.5600000000000005,
-      "payeur": ""
+      "paye": 7.56,
+      "payeur": "",
+      "payeManual": 7.56
     },
     {
       "id": "mvuxjlue80bjy",
@@ -945,8 +947,9 @@
       "prix": 6.5,
       "frais": 0.36,
       "reduc": 0.3,
-      "paye": 6.5600000000000005,
-      "payeur": ""
+      "paye": 6.56,
+      "payeur": "",
+      "payeManual": 6.56
     },
     {
       "id": "mvuxjluf1e3zs",
@@ -981,8 +984,9 @@
       "prix": 7.5,
       "frais": 0.36,
       "reduc": 0.3,
-      "paye": 7.5600000000000005,
-      "payeur": ""
+      "paye": 7.56,
+      "payeur": "",
+      "payeManual": 7.56
     },
     {
       "id": "mvuxjluf4hqcj",
@@ -1641,8 +1645,9 @@
       "prix": 13.9,
       "frais": 0.25,
       "reduc": 0.87,
-      "paye": 13.280000000000001,
-      "payeur": ""
+      "paye": 13.28,
+      "payeur": "",
+      "payeManual": 13.28
     },
     {
       "id": "mvuxjlufgkxt3",
@@ -1653,8 +1658,9 @@
       "prix": 13.9,
       "frais": 0.25,
       "reduc": 0.87,
-      "paye": 13.280000000000001,
-      "payeur": ""
+      "paye": 13.28,
+      "payeur": "",
+      "payeManual": 13.28
     },
     {
       "id": "mvuxjlufqhwqd",
@@ -1665,8 +1671,9 @@
       "prix": 13.9,
       "frais": 0.25,
       "reduc": 0.87,
-      "paye": 13.280000000000001,
-      "payeur": ""
+      "paye": 13.28,
+      "payeur": "",
+      "payeManual": 13.28
     },
     {
       "id": "mvuxjluf55t9x",
@@ -1677,8 +1684,9 @@
       "prix": 13.9,
       "frais": 0.25,
       "reduc": 0.87,
-      "paye": 13.280000000000001,
-      "payeur": ""
+      "paye": 13.28,
+      "payeur": "",
+      "payeManual": 13.28
     },
     {
       "id": "mvuxjlufg7n7y",
@@ -1689,8 +1697,9 @@
       "prix": 8.97,
       "frais": 0.25,
       "reduc": 0.87,
-      "paye": 8.350000000000001,
-      "payeur": ""
+      "paye": 8.35,
+      "payeur": "",
+      "payeManual": 8.35
     },
     {
       "id": "mvuxjlufo8t7h",
@@ -1845,8 +1854,9 @@
       "prix": 8.8,
       "frais": 1.35,
       "reduc": 0.86,
-      "paye": 9.290000000000001,
-      "payeur": ""
+      "paye": 9.29,
+      "payeur": "",
+      "payeManual": 9.29
     },
     {
       "id": "mvuxjlufq300j",
@@ -1857,8 +1867,9 @@
       "prix": 8.8,
       "frais": 1.35,
       "reduc": 0.86,
-      "paye": 9.290000000000001,
-      "payeur": ""
+      "paye": 9.29,
+      "payeur": "",
+      "payeManual": 9.29
     },
     {
       "id": "mvuxjluflw1ql",
