@@ -33,25 +33,32 @@
   .tab{padding:7px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
   .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
   .chart-container{position:relative;height:300px}
-  @media(max-width:640px){header h1{width:100%}}
+  /* ===== RESPONSIVE MOBILE ===== */
+  @media(max-width:640px){
+    header{padding:10px 12px}
+    header h1{width:100%;font-size:1.05rem}
+    .wrap{margin-top:14px;padding:0 10px;gap:14px}
+    .card{padding:14px}
+    .row{gap:8px}
+    table{font-size:.8rem}
+    th,td{padding:6px 7px;word-wrap:break-word}
+    .col-frais,.col-reduc,.col-paye{display:none}
+    .charts-grid{grid-template-columns:1fr !important}
+  }
 </style>
 </head>
 <body data-theme="light">
-
 <header>
   <h1>📋 Consultation Repas SNC</h1>
   <button class="btn sec" onclick="document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'">🌓</button>
   <button class="btn sec" onclick="location.reload()">🔄 Actualiser</button>
 </header>
-
 <div class="wrap">
-
   <!-- Alerte solde > 50 € -->
   <div id="alerteSolde" style="display:none;background:rgba(220,38,38,.1);border:2px solid var(--bad);border-radius:var(--radius);padding:16px">
     <h2 style="margin:0 0 10px;color:var(--bad)">⚠️ Alerte : Solde supérieur à 50 €</h2>
     <div id="alerteListe"></div>
   </div>
-
   <div class="card">
     <div class="flex-between" style="margin-bottom:14px">
       <h2>🍽 Commandes</h2>
@@ -62,25 +69,22 @@
         <button class="btn sec" onclick="resetCommande()">📋 Toutes</button>
       </div>
     </div>
-
     <div class="row" style="margin-bottom:10px">
       <div style="flex:1;min-width:180px">
         <input type="text" id="fSearch" placeholder="🔍 Recherche (nom, plat, restaurant)" oninput="render()">
       </div>
     </div>
-
     <div class="tabs" style="margin-bottom:14px">
       <div class="tab active" id="tab-all" onclick="setTab('all')">Toutes</div>
       <div class="tab" id="tab-regs" onclick="setTab('regs')">À régulariser</div>
       <div class="tab" id="tab-paid" onclick="setTab('paid')">Payées</div>
     </div>
-
     <div style="overflow-x:auto">
     <table>
       <thead><tr>
         <th>📅 Date ↓</th><th>👤 Participant</th><th>🍽 Restaurant</th><th>Plat</th>
-        <th class=num>Prix</th><th class=num>Frais</th><th class=num>Réduc</th>
-        <th class=num>Total</th><th class=num>Payé</th><th class=num>Solde</th>
+        <th class="num">Prix</th><th class="num col-frais">Frais</th><th class="num col-reduc">Réduc</th>
+        <th class="num">Total</th><th class="num col-paye">Payé</th><th class="num">Solde</th>
         <th>Statut</th>
       </tr></thead>
       <tbody id="rows">
@@ -90,7 +94,6 @@
     </div>
     <p class="hint" style="margin-top:12px">💡 Cette page est en lecture seule. Les données sont mises à jour manuellement par l'administrateur. Dates en JJ-MM-AAAA.</p>
   </div>
-
   <div class="card" id="recapCard" style="display:none">
     <h2>📊 Récapitulatif par participant</h2>
     <div class="row" style="margin-bottom:14px">
@@ -118,10 +121,9 @@
     </div>
     <p class="hint">Total sur les commandes filtrées ci-dessus. Trié par solde restant décroissant.</p>
   </div>
-
   <div class="card" id="graphiquesCard" style="display:none">
     <h2>📊 Répartition des dépenses</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       <div>
         <h3 style="font-size:.85rem;color:var(--muted)">Par participant</h3>
         <div class="chart-container"><canvas id="chartParticipant"></canvas></div>
@@ -132,24 +134,19 @@
       </div>
     </div>
   </div>
-
 </div>
-
 <script>
 /* CHANGER CETTE URL PAR CELLE DE VOTRE FICHIER JSON HÉBERGÉ SUR GITHUB PAGES */
 const JSON_URL = 'remboursement_repas_snc.json';
-
 let data = { orders: [], participants: [] };
 let currentTab = 'all';
 let currentCommande = '';
 let chartPart = null, chartResto = null;
-
 const r2 = n => Math.round(n * 100) / 100;
 const fmt = n => r2(n).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 const fmtDate = d => { if (!d) return ''; const p = d.split('-'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : d; };
 const totalOf = o => r2((Number(o.prix) || 0) + (Number(o.frais) || 0) - (Number(o.reduc) || 0));
 const soldeOf = o => r2(totalOf(o) - (Number(o.paye) || 0));
-
 function loadJSON() {
   fetch(JSON_URL, { cache: 'no-store' })
     .then(res => { if (!res.ok) throw new Error('Erreur HTTP'); return res.json(); })
@@ -167,7 +164,6 @@ function loadJSON() {
         `<tr><td colspan="11" style="text-align:center;color:var(--bad);padding:32px">❌ Impossible de charger les données. Vérifiez que le fichier JSON est bien accessible sur GitHub Pages. (${err.message})</td></tr>`;
     });
 }
-
 function buildCommandeList() {
   const sel = document.getElementById('fCommande');
   const cur = sel.value;
@@ -182,18 +178,15 @@ function buildCommandeList() {
     list.map(c => `<option value="${c.date}__${c.resto}">${fmtDate(c.date)} — ${c.resto} (${c.count} pers.)</option>`).join('');
   if (cur) sel.value = cur;
 }
-
 function onCommandeChange() {
   currentCommande = document.getElementById('fCommande').value;
   render();
 }
-
 function resetCommande() {
   currentCommande = '';
   document.getElementById('fCommande').value = '';
   render();
 }
-
 function setTab(t) {
   currentTab = t;
   ['all','regs','paid'].forEach(x => {
@@ -201,36 +194,27 @@ function setTab(t) {
   });
   render();
 }
-
 function populateRecapFilters() {
   const selPart = document.getElementById('recapParticipant');
   const selPeriode = document.getElementById('recapPeriode');
-
   const noms = [...new Set(data.orders.map(o => o.nom).filter(Boolean))].sort();
   selPart.innerHTML = '<option value="">👤 Tous les participants</option>' +
     noms.map(n => `<option value="${n}">${n}</option>`).join('');
-
   const dates = [...new Set(data.orders.map(o => o.date).filter(Boolean))].sort().reverse();
   selPeriode.innerHTML = '<option value="">📅 Toutes les dates</option>' +
     dates.map(d => `<option value="${d}">${fmtDate(d)}</option>`).join('');
 }
-
 function render() {
   const q = (document.getElementById('fSearch').value || '').toLowerCase();
   let rows = [...data.orders];
-
   if (currentCommande) {
     const [date, resto] = currentCommande.split('__');
     rows = rows.filter(o => o.date === date && o.resto === resto);
   }
-
   if (currentTab === 'regs') rows = rows.filter(o => soldeOf(o) > 0.01);
   if (currentTab === 'paid') rows = rows.filter(o => totalOf(o) > 0.01 && soldeOf(o) <= 0.01);
-
   if (q) rows = rows.filter(o => [o.nom, o.plat, o.resto].join(' ').toLowerCase().includes(q));
-
   rows.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.nom || '').localeCompare(b.nom || ''));
-
   const tb = document.getElementById('rows');
   if (!rows.length) {
     tb.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:32px">Aucune ligne ne correspond à ce filtre.</td></tr>`;
@@ -247,43 +231,36 @@ function render() {
         <td>${o.resto || ''}</td>
         <td>${o.plat || ''}</td>
         <td class="num">${fmt(o.prix)}</td>
-        <td class="num">${fmt(o.frais)}</td>
-        <td class="num">${fmt(o.reduc)}</td>
+        <td class="num col-frais">${fmt(o.frais)}</td>
+        <td class="num col-reduc">${fmt(o.reduc)}</td>
         <td class="num"><b>${fmt(tot)}</b></td>
-        <td class="num">${fmt(o.paye)}</td>
+        <td class="num col-paye">${fmt(o.paye)}</td>
         <td class="num" style="color:${sol > 0.01 ? 'var(--bad)' : 'var(--ok)'}"><b>${fmt(sol)}</b></td>
         <td>${status}</td>
       </tr>`;
     }).join('');
   }
-
   renderRecap();
   renderGraphiques();
 }
-
 function renderRecap() {
   const fPart = document.getElementById('recapParticipant').value;
   const fPeriode = document.getElementById('recapPeriode').value;
-
   let filteredOrders = data.orders;
   if (fPart) filteredOrders = filteredOrders.filter(o => o.nom === fPart);
   if (fPeriode) filteredOrders = filteredOrders.filter(o => o.date === fPeriode);
-
   const totals = {};
   data.participants.forEach(n => totals[n] = { count: 0, total: 0, paye: 0 });
-
   filteredOrders.forEach(o => {
     if (!totals[o.nom]) totals[o.nom] = { count: 0, total: 0, paye: 0 };
     totals[o.nom].count++;
     totals[o.nom].total = r2(totals[o.nom].total + totalOf(o));
     totals[o.nom].paye = r2(totals[o.nom].paye + (Number(o.paye) || 0));
   });
-
   const entries = Object.entries(totals)
     .filter(([n, v]) => v.count > 0)
     .map(([n, v]) => ({ nom: n, ...v, solde: r2(v.total - v.paye) }))
     .sort((a, b) => b.solde - a.solde || b.total - a.total);
-
   const tbody = document.getElementById('recapRows');
   tbody.innerHTML = entries.map(e => {
     const color = e.solde > 0.01 ? 'var(--bad)' : (e.total > 0.01 ? 'var(--ok)' : 'var(--muted)');
@@ -295,7 +272,6 @@ function renderRecap() {
       <td class=num style="color:${color}"><b>${fmt(e.solde)}</b></td>
     </tr>`;
   }).join('');
-
   const tCount = entries.reduce((s, e) => s + e.count, 0);
   const tTotal = r2(entries.reduce((s, e) => s + e.total, 0));
   const tPaye = r2(entries.reduce((s, e) => s + e.paye, 0));
@@ -307,15 +283,12 @@ function renderRecap() {
     <td class=num>${fmt(tPaye)}</td>
     <td class=num style="color:var(--bad)">${fmt(tSolde)}</td>
   `;
-
   document.getElementById('recapCard').style.display = 'block';
-
   /* Alerte solde > 50 € */
   const seuil = 50;
   const enRetard = entries.filter(e => e.solde > seuil);
   const alerteDiv = document.getElementById('alerteSolde');
   const alerteListe = document.getElementById('alerteListe');
-
   if (enRetard.length > 0) {
     alerteDiv.style.display = 'block';
     alerteListe.innerHTML = enRetard
@@ -329,27 +302,21 @@ function renderRecap() {
     alerteDiv.style.display = 'none';
   }
 }
-
 function renderGraphiques() {
   const parPart = {};
   const parResto = {};
-
   data.orders.forEach(o => {
     const tot = totalOf(o);
     parPart[o.nom] = r2((parPart[o.nom] || 0) + tot);
     parResto[o.resto] = r2((parResto[o.resto] || 0) + tot);
   });
-
   const labelsPart = Object.keys(parPart).sort();
   const dataPart = labelsPart.map(n => parPart[n]);
   const labelsResto = Object.keys(parResto).sort((a, b) => parResto[b] - parResto[a]);
   const dataResto = labelsResto.map(r => parResto[r]);
-
   const palette = ['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5','#059669','#be123c'];
-
   if (chartPart) chartPart.destroy();
   if (chartResto) chartResto.destroy();
-
   chartPart = new Chart(document.getElementById('chartParticipant'), {
     type: 'bar',
     data: {
@@ -362,7 +329,6 @@ function renderGraphiques() {
       scales: { y: { ticks: { font: { size: 11 } } } }
     }
   });
-
   chartResto = new Chart(document.getElementById('chartResto'), {
     type: 'doughnut',
     data: {
@@ -373,10 +339,8 @@ function renderGraphiques() {
       plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } }
     }
   });
-
   document.getElementById('graphiquesCard').style.display = 'block';
 }
-
 loadJSON();
 </script>
 </body>
