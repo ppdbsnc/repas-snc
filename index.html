@@ -33,6 +33,11 @@
   .tab{padding:7px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
   .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
   .chart-container{position:relative;height:300px}
+  /* ===== FILTRES PÉRIODE ===== */
+  .date-filter{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:12px}
+  .date-filter label{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:4px}
+  .date-filter input{max-width:160px}
+  .date-filter .btn{align-self:end}
   /* ===== MODE CARTES COMPLÈTES (mobile) ===== */
   @media(max-width:640px){
     header{padding:10px 12px}
@@ -95,6 +100,18 @@
         </select>
         <button class="btn sec" onclick="resetCommande()">📋 Toutes</button>
       </div>
+    </div>
+    <!-- Filtres période -->
+    <div class="date-filter">
+      <div>
+        <label for="fDu">Du</label>
+        <input type="date" id="fDu" onchange="render()">
+      </div>
+      <div>
+        <label for="fAu">Au</label>
+        <input type="date" id="fAu" onchange="render()">
+      </div>
+      <button class="btn sec" onclick="resetDateFilter()">🔄 Réinitialiser les dates</button>
     </div>
     <div class="row" style="margin-bottom:10px">
       <div style="flex:1;min-width:180px">
@@ -174,6 +191,21 @@ const fmt = n => r2(n).toLocaleString('fr-FR', { style: 'currency', currency: 'E
 const fmtDate = d => { if (!d) return ''; const p = d.split('-'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : d; };
 const totalOf = o => r2((Number(o.prix) || 0) + (Number(o.frais) || 0) - (Number(o.reduc) || 0));
 const soldeOf = o => r2(totalOf(o) - (Number(o.paye) || 0));
+
+/* Filtre de période : applique les bornes "Du" et "Au" sur un tableau de commandes */
+function applyDateRange(rows) {
+  const du = document.getElementById('fDu').value;
+  const au = document.getElementById('fAu').value;
+  if (du) rows = rows.filter(o => o.date && o.date >= du);
+  if (au) rows = rows.filter(o => o.date && o.date <= au);
+  return rows;
+}
+function resetDateFilter() {
+  document.getElementById('fDu').value = '';
+  document.getElementById('fAu').value = '';
+  render();
+}
+
 function loadJSON() {
   fetch(JSON_URL, { cache: 'no-store' })
     .then(res => { if (!res.ok) throw new Error('Erreur HTTP'); return res.json(); })
@@ -238,6 +270,8 @@ function render() {
     const [date, resto] = currentCommande.split('__');
     rows = rows.filter(o => o.date === date && o.resto === resto);
   }
+  /* Applique la période Du/Au */
+  rows = applyDateRange(rows);
   if (currentTab === 'regs') rows = rows.filter(o => soldeOf(o) > 0.01);
   if (currentTab === 'paid') rows = rows.filter(o => totalOf(o) > 0.01 && soldeOf(o) <= 0.01);
   if (q) rows = rows.filter(o => [o.nom, o.plat, o.resto].join(' ').toLowerCase().includes(q));
@@ -274,6 +308,8 @@ function renderRecap() {
   const fPart = document.getElementById('recapParticipant').value;
   const fPeriode = document.getElementById('recapPeriode').value;
   let filteredOrders = data.orders;
+  /* Applique la période Du/Au au récapitulatif aussi */
+  filteredOrders = applyDateRange(filteredOrders);
   if (fPart) filteredOrders = filteredOrders.filter(o => o.nom === fPart);
   if (fPeriode) filteredOrders = filteredOrders.filter(o => o.date === fPeriode);
   const totals = {};
@@ -332,7 +368,9 @@ function renderRecap() {
 function renderGraphiques() {
   const parPart = {};
   const parResto = {};
-  data.orders.forEach(o => {
+  /* Applique la période Du/Au aux graphiques aussi */
+  const filtered = applyDateRange(data.orders);
+  filtered.forEach(o => {
     const tot = totalOf(o);
     parPart[o.nom] = r2((parPart[o.nom] || 0) + tot);
     parResto[o.resto] = r2((parResto[o.resto] || 0) + tot);
