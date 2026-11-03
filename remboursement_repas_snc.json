@@ -2004,8 +2004,9 @@
       "prix": 8.9,
       "frais": 0.5,
       "reduc": 0.38,
-      "paye": 0,
-      "payeur": ""
+      "paye": 9.02,
+      "payeur": "",
+      "payeManual": 9.02
     },
     {
       "id": "mvuxjlufu1cf4",
@@ -2019,19 +2020,6 @@
       "paye": 9.02,
       "payeur": "",
       "payeManual": 9.02
-    },
-    {
-      "id": "mw0jvbyxnbqrx",
-      "date": "2026-11-03",
-      "nom": "Haroune",
-      "resto": "McDo",
-      "plat": "1 Big Mac",
-      "prix": 4,
-      "frais": 0,
-      "reduc": 0,
-      "paye": 0,
-      "creditUtilise": 0,
-      "payeur": ""
     }
   ],
   "participants": [
