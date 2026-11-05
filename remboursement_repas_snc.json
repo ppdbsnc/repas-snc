@@ -2071,9 +2071,10 @@
       "prix": 12.95,
       "frais": 0.62,
       "reduc": 0.54,
-      "paye": 0,
+      "paye": 13.03,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 13.03
     }
   ],
   "participants": [
