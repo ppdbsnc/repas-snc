@@ -2100,9 +2100,10 @@
       "prix": 6,
       "frais": 0.62,
       "reduc": 0.29,
-      "paye": 0,
+      "paye": 6.33,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 6.33
     },
     {
       "id": "mw4rlepxdim90",
