@@ -2181,9 +2181,10 @@
       "prix": 5.15,
       "frais": 0.5,
       "reduc": 0.28,
-      "paye": 0,
+      "paye": 5.37,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 5.37
     },
     {
       "id": "mwncdq5zqp9e2",
@@ -2194,9 +2195,10 @@
       "prix": 5.15,
       "frais": 0.5,
       "reduc": 0.28,
-      "paye": 0,
+      "paye": 5.37,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 5.37
     }
   ],
   "participants": [
