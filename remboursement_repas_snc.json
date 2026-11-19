@@ -2142,9 +2142,10 @@
       "prix": 8,
       "frais": 0.5,
       "reduc": 0.28,
-      "paye": 0,
+      "paye": 8.22,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 8.22
     },
     {
       "id": "mwncdq5z1vqey",
@@ -2168,9 +2169,10 @@
       "prix": 6.95,
       "frais": 0.5,
       "reduc": 0.28,
-      "paye": 0,
+      "paye": 7.17,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 7.17
     },
     {
       "id": "mwncdq5zptgzm",
