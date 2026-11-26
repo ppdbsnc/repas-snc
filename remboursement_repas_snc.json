@@ -2321,9 +2321,10 @@
       "prix": 11.5,
       "frais": 0.5,
       "reduc": 0.3,
-      "paye": 0,
+      "paye": 11.7,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 11.7
     }
   ],
   "participants": [
