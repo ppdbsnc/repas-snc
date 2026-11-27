@@ -2336,9 +2336,10 @@
       "prix": 8.95,
       "frais": 0.62,
       "reduc": 0.38,
-      "paye": 0,
+      "paye": 9.19,
       "creditUtilise": 0,
-      "payeur": ""
+      "payeur": "",
+      "payeManual": 9.19
     },
     {
       "id": "mwyrgoo9xp0dz",
